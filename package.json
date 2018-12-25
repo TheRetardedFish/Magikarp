@@ -1,0 +1,21 @@
+{
+  "name": "saberbot",
+  "version": "1.0.0",
+  "description": "Discord RPG bot coded in NodeJS using SQLite3.",
+  "main": "saber.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "Discord",
+    "Discord-JS",
+    "Node-JS",
+    "Discord-Bot"
+  ],
+  "author": "Traven West",
+  "license": "MIT",
+  "dependencies": {
+    "better-sqlite3": "^5.2.1",
+    "discord.js": "^11.4.2"
+  }
+}
