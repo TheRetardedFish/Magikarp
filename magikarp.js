@@ -3,103 +3,176 @@ const client = new Discord.Client();
 const config = require("./config.json");
 const SQLite = require("better-sqlite3");
 const sql = new SQLite('./players.sqlite');
+const cooldowns = new Discord.Collection();
+client.commands = new Discord.Collection();
 
 /**
- *   Required for command cooldown to work.
+ *   Project:  Magikarp Bot
+ *   Version:  1.0.0 Developmental 1
+ *   Authors:  Traven <@TravenWest or Traven#1337>
+ *   License:  MIT License
+ *   
+ *   Welcome to the main file of the Magikarp Bot. This file contains the all
+ *   of the commands, functions, and everything that we need for the bot to
+ *   work. I also explain each function and important point of code for people
+ *   to be able to help me with expanding the bot and making it better.
+ *   
+ *   This bot was made for fun and a good use for my personal Discord server. It
+ *   is also open source for anyone else who wants to contribute to it or even work
+ *   their own commands, ideas, and whatever else they add to it.
  */
-client.commands = new Discord.Collection();
-const cooldowns = new Discord.Collection();
 
 client.on("ready", () => {
-        console.log(`Logged in as Magikarp#6679. Serving ${client.users.size} people on ${client.guilds.size} servers.`);
+        
+        console.log(`Logged in as Magikarp Bot. Serving ${client.users.size} people on ${client.guilds.size} servers.`);
         client.user.setActivity(`Splashing ${client.users.size} people!`);
-
-        /**
-         *   Prepare the table to insert or replace member profiles into the database. It also checks to see
-         *   if a profile already exists. If it doesn't then it will create a new one for that member.
-         */
+        
         const table = sql.prepare("SELECT count(*) FROM sqlite_master WHERE type='table' AND name = 'players';").get();
 
         if (!table['count(*)']) {
-                sql.prepare("CREATE TABLE players (id TEXT PRIMARY KEY, user TEXT, guild TEXT, exp INTEGER, level INTEGER, coins INTEGER, hp INTERGER, mhand TEXT, ohand TEXT, armor TEXT, accessory TEXT);").run();
+                sql.prepare("CREATE TABLE players (id TEXT PRIMARY KEY, user TEXT, guild TEXT, level INTEGER, exp INTEGER, coins INTEGER, health INTEGER, attack INTEGER, defense INTEGER);").run();
                 sql.prepare("CREATE UNIQUE INDEX idx_players_id ON players (id);").run();
                 sql.pragma("synchronous = 1");
                 sql.pragma("journal_mode = wal");
         }
-
+        
         client.getPlayer = sql.prepare("SELECT * FROM players WHERE user = ? AND guild = ?");
-        client.setPlayer = sql.prepare("INSERT OR REPLACE INTO players (id, user, guild, exp, level, coins, hp, mhand, ohand, armor, accessory) VALUES (@id, @user, @guild, @exp, @level, @coins, @hp, @mhand, @ohand, @armor, @accessory);");
+        client.setPlayer = sql.prepare("INSERT OR REPLACE INTO players (id, user, guild, level, exp, coins, health, attack, defense) VALUES (@id, @user, @guild, @level, @exp, @coins, @health, @attack, @defense);");
+        
 });
 
+
+/**
+ *   This function adds to the total people being splashed by Magikarp when the
+ *   bot is invited to a new server. In the console, it will also give a small
+ *   amount of information related to the server joined.
+ */
 client.on("guildCreate", guild => {
+        
         console.log(`New guild joined: ${guild.name} (id: ${guild.id}). This guild has ${guild.memberCount} members!`);
         client.user.setActivity(`Splashing ${client.users.size} people!`);
+        
 });
 
-
+/**
+ *   This function removes the total people in a server being splashed by Magikarp
+ *   bot. The total will update based on the amount of people in the server when the
+ *   bot is removed. It also provides a small amount of information regarding the
+ *   server in the console.
+ */
 client.on("guildDelete", guild => {
+        
         console.log(`I have been removed from: ${guild.name} (id: ${guild.id})`);
         client.user.setActivity(`Splashing ${client.users.size} people!`);
+        
 });
 
-client.on("message", message => {
-        if (message.author.bot) return;
 
+/**
+ *   Final Warning. There is a lot going on below. I seriously mean a lot. Make
+ *   sure to read all documentation below to understand what is going on exactly
+ *   in the code. The code for all of the commands for the bot is below. Each
+ *   command is documented as best as I could do.
+ *   
+ *   Remember, this is your final warning when it comes to reading below.
+ */
+client.on("message", message => {
+        
+        /**
+         *   The following line of code will keep bots from causing bot inception from happening. We
+         *   do not need Magikarp responding to any other bot.
+         */
+        if (message.author.bot) return;
+        
+        
+        /**
+         *   Experience Function.
+         *   
+         *   The following code setups players and gives experience to them when they post a message
+         *   in the discord server. First, we check to see if the Discord member has a character in
+         *   the database. If not, we insert default information into the database for them. Next, we
+         *   setup an experience modifier to adjust if needed before we reach 1.0.0 Gold. When the
+         *   Discord Member posts a message, it gives a random amount of experience based on the min
+         *   and max allowed. Finally, the code checks to see when we need to increase the level based
+         *   on how much experience that the member has currently. As all of this happens... the level
+         *   and experience gain, we update the database with the new information.
+         */
         let player;
 
         if (message.guild) {
                 player = client.getPlayer.get(message.author.id, message.guild.id);
 
                 if (!player) {
-                        player = { id: `${message.guild.id}-${message.author.id}`, user: message.author.id, guild: message.guild.id, exp: 0, level: 1, coins: 1000, hp: 10, mhand: 0, ohand: 0, armor: 0, accessory: 0 }
+                        player = { id: `${message.guild.id}-${message.author.id}`, user: message.author.id, guild: message.guild.id, level: 1, exp: 0, coins: 1000, health: 10, attack: 1, defense: 1 }
                 }
                 
-                var minEXP = 5;
-                var maxEXP = 20;
+                /**
+                 *   Experience Modifier.
+                 *   
+                 *   These can be adjusted if we need to make it easier or harder to gain a level
+                 *   with the leveling system. The default values that works for the support server
+                 *   is min of 5 and max of 15.
+                 */
+                const curLevel  = Math.floor(0.25 * Math.sqrt(player.exp));
+                var giveHealth  = 1;
+                var giveAttack  = 1;
+                var giveDefense = 1;
+                var minEXP      = 5;
+                var maxEXP      = 15;
                 
                 function getRandomInt(minEXP, maxEXP) {
                         min = Math.ceil(minEXP);
                         max = Math.floor(maxEXP);
-                        return Math.floor(Math.random() * (maxEXP - minEXP)) + minEXP;
                 }
 
                 giveEXP = Math.floor(Math.random() * (maxEXP - minEXP)) + minEXP;
-                addHealth = 1;
-
+                
+                /**
+                 *   TODO:  Cooldown (maybe?)
+                 */
                 if(player.exp += giveEXP) {
                         player.exp++;
                 }
                 
-                const curLevel = Math.floor(0.1 * Math.sqrt(player.exp));
-
+                
                 if(player.level < curLevel) {
                         player.level++;
-                        
-                        if(player.hp += addHealth) {
-                                player.hp++
-                        }
+                }
+                
+                if(player.health =+ giveHealth) {
+                        player.health++
+                }
+                
+                if(player.attack =+ giveAttack) {
+                        player.attack++
+                }
+                
+                if(player.defense =+ giveDefense) {
+                        player.defense++
                 }
 
                 client.setPlayer.run(player);
         }
-
+        
+        /**
+         *   Cooldown Function.
+         *
+         *   This is to prevent spam and abuse when it comes to initing commands from members. It 
+         *   will also only allow people to only use the mining, fishing, and woodcutting commands
+         *   once per 60 seconds. This can also be modified if needed.
+         */
         if (message.content.indexOf(config.prefix) !== 0) return;
-
+        
         const args = message.content.slice(config.prefix.length).trim().split(/ +/g);
         const command = args.shift().toLowerCase();
         
-        
-        /**
-         *   Cooldown function. Checks to see if a command has been init already within the length of time.
-         *   The default cooldown is 15 seconds here.
-         */
         if (!cooldowns.has(command.name)) {
 		cooldowns.set(command.name, new Discord.Collection());
 	}
 
 	const now = Date.now();
 	const timestamps = cooldowns.get(command.name);
-	const cooldownAmount = (command.cooldown || 1) * 1000;
+	const cooldownAmount = (command.cooldown || 5) * 1000;
 
 	if (timestamps.has(message.author.id)) {
 		const expirationTime = timestamps.get(message.author.id) + cooldownAmount;
@@ -113,9 +186,16 @@ client.on("message", message => {
 	timestamps.set(message.author.id, now);
 	setTimeout(() => timestamps.delete(message.author.id), cooldownAmount);
         
-        
         /**
-         *   Help Command. This command allows you to bring up a list of all the commands of the bot.
+         *   Prefix Function.
+         *   
+         *   The following code sets the prefix of the bot. The default prefix is $ for all commands
+         *   which are init by Discord members.
+         */
+        if (message.content.indexOf(config.prefix) !== 0) return;   
+         
+        /**
+         *   Help Command. Lists all bot commands for the user.
          */
         if(command === "help" || command === "support") {
                 const embed = new Discord.RichEmbed()
@@ -123,51 +203,34 @@ client.on("message", message => {
                 .setTitle('Magikarp Bot\'s Help')
                 .setThumbnail(client.user.avatarURL)
                 .setColor(0xFF6600)
-                .addField('$Profile', 'Displays your profile.', true)
-                .addField('$Give', 'Give coins to someone', true)
-                .addField('$Chop', 'Earn coins woodcutting.', true)
-                .addField('$Mine', 'Earn coins mining.', true)
-                .addField('$Fish', 'Earn coins fishing.', true)
-                .addField('$Rank', 'Shows level and experience.', true)
-                .addField('$Richest', 'Shows richest members.', true)
-                .addField('$Ping', 'Shows current latency.', true)
+                .addField('Ping', 'Displays the bot\'s ping.', true)
+                .addField('Give', 'Give coins to another user.', true)
+                .addField('Chop', 'Go mining!', true)
+                .addField('Fish', 'Go fishing!', true)
+                .addField('Mine', 'Go woodcutting!', true)
                 
                 return message.channel.send({embed});
         }
-       
+        
         /**
          *   Profile Command. This command allows members to check their profile.
          */
-         if(command === "profile" || command === "me") {
+        if(command === "profile" || command === "me") {
                 const embed = new Discord.RichEmbed()
 
                 .setTitle(`${message.author.username}'s Profile`)
                 .setThumbnail(message.author.avatarURL)
                 .setColor(0xFF6600)
-                .addField('Coins', player.coins, true)
                 .addField('Current Level', player.level, true)
                 .addField('Current Experience', player.exp, true)
-                .addField('Max Health', player.hp, true)
-                .addField('Main Hand', player.mHand, true)
-                .addField('Off Hand', player.oHand)
-                .addField('Armor', player.armor, true)
-                .addField('Accessory', player.accessory, true)
+                .addField('Coins', player.coins, true)
+                .addField('Health', player.health, true)
+                .addField('Attack', player.attack, true)
+                .addField('Defense', player.defense, true)
 
                 return message.channel.send({embed});
         }
         
-        /**
-         *   Adventure command. Take your character on an adventure to earn a lot of coins and experience.
-         */
-        if(command === "adventure" || command === "mission") {
-                let player;
-                player = client.getPlayer.get(message.author.id, message.guild.id);
-                
-                if(!player) {
-                        player = { id: `${message.guild.id}-${message.author.id}`, user: message.author.id, guild: message.guild.id, exp: 0, level: 1, coins: 1000, hp: 10, mhand: 0, ohand:0, armor: 0, accessory: 0 }
-                }     
-        }
-
         /**
          *   Give coins to another member of the server.
          */
@@ -176,7 +239,8 @@ client.on("message", message => {
                 sender = client.getPlayer.get(message.author.id, message.guild.id);
                 
                 if (!sender) {
-                        player = { id: `${message.guild.id}-${message.author.id}`, user: message.author.id, guild: message.guild.id, exp: 0, level: 1, coins: 1000, hp: 10, mhand: 0, ohand: 0, armor: 0, accessory: 0 }
+                        player = { 
+                                id: `${message.guild.id}-${message.author.id}`, user: message.author.id, guild: message.guild.id, level: 1, exp: 0, coins: 1000, health: 10, attack: 1, defense: 1 }
                 }
                 
                 const user = message.mentions.users.first() || client.users.get(args[0]);
@@ -187,7 +251,7 @@ client.on("message", message => {
                         
                 let player = client.getPlayer.get(user.id, message.guild.id);
                 if (!player) {
-                        player = { id: `${message.guild.id}-${user.id}`, user: user.id, guild: message.guild.id, exp: 0, level: 1, coins: 1000 }
+                        player = { id: `${message.guild.id}-${user.id}`, user: message.author.id, guild: message.guild.id, level: 1, exp: 0, coins: 1000, health: 10, attack: 1, defense: 1 }
                 }
                 
                 sender.coins -= coinsToAdd;
@@ -200,17 +264,34 @@ client.on("message", message => {
         }
         
         /**
-         *   Mining Command. This command allows users to gain some experience and money.
+         *   Richest Command.
+         */
+        if(command == "richest") {
+                const top10 = sql.prepare("SELECT * FROM players WHERE guild = ? ORDER BY coins DESC LIMIT 10;").all(message.guild.id);
+        
+                const embed = new Discord.RichEmbed()
+                .setTitle("Richest Players")
+                .setColor(0xFF6600);
+        
+                for(const data of top10) {
+                        embed.addField(client.users.get(data.user).username, data.coins, true);
+                }
+        
+                return message.channel.send({embed});
+        }
+        
+	/**
+         *   Mining Command.
          */
         if(command === "mine") {
                 let player;
 
                 player = client.getPlayer.get(message.author.id, message.guild.id);
 
-                minCoins = 100;
-                maxCoins = 500;
-                minEXP   = 10;
-                maxEXP   = 50;
+                minCoins = 10;
+                maxCoins = 100;
+                minEXP   = 5;
+                maxEXP   = 25;
 
                 function getRandomInt(minCoins, maxCoins) {
                         min = Math.ceil(minCoins);
@@ -261,19 +342,18 @@ client.on("message", message => {
                 return message.channel.send({embed});
         }
         
-        
         /**
-         *   Fishing Command. This command allows users to gain some experience and money.
+         *   Fishing Command.
          */
         if(command === "fish") {
                 let player;
 
                 player = client.getPlayer.get(message.author.id, message.guild.id);
 
-                minCoins = 100;
-                maxCoins = 500;
-                minEXP   = 10;
-                maxEXP   = 50;
+                minCoins = 10;
+                maxCoins = 100;
+                minEXP   = 5;
+                maxEXP   = 25;
 
                 function getRandomInt(minCoins, maxCoins) {
                         min = Math.ceil(minCoins);
@@ -323,19 +403,18 @@ client.on("message", message => {
                 return message.channel.send({embed});
         }
         
-        
         /**
-         *   Woodcutting Command. This command allows you to gain some experience and money.
+         *   Woodcutting Command.
          */
-        if(command === "chop" || command === "woodcut") {
+        if(command === "chop") {
                 let player;
 
                 player = client.getPlayer.get(message.author.id, message.guild.id);
 
-                minCoins = 100;
-                maxCoins = 500;
-                minEXP   = 10;
-                maxEXP   = 50;
+                minCoins = 10;
+                maxCoins = 100;
+                minEXP   = 5;
+                maxEXP   = 25;
 
                 function getRandomInt(minCoins, maxCoins) {
                         min = Math.ceil(minCoins);
@@ -384,57 +463,8 @@ client.on("message", message => {
                 return message.channel.send({embed});
         }
         
-        
         /**
-         *   Rank Command. This command allows members to check their current level and points.
-         */
-        if(command === "rank") {
-                const embed = new Discord.RichEmbed()
-
-                .setTitle(`${message.author.username}'s Experience`)
-                .setThumbnail(message.author.avatarURL)
-                .setColor(0xFF6600)
-                .addField('Current Level:', player.level, true)
-                .addField('Current Experience:', player.exp, true)
-
-                return message.channel.send({embed});
-        }
-        
-        
-        /**
-         *   Leaderboard Command. This command allows members to view the leaderboard for the server they are in.
-         */
-        //if(command == "richest") {
-        //        const top10 = sql.prepare("SELECT * FROM players WHERE guild = ? ORDER BY coins DESC LIMIT 10;").all(message.guild.id);
-        //
-        //        const embed = new Discord.RichEmbed()
-        //        .setTitle("Server Leaderboard")
-        //        .setColor(0xFF6600);
-        //
-        //        for(const data of top10) {
-        //                embed.addField(client.users.get(data.user).username, data.coins, true);
-        //        }
-        //
-        //        return message.channel.send({embed});
-        //}
-        
-        
-        /**
-         *   Ping Command. This command gets the current latency of the bot to the Discord API.
-         */
-        if(command === "ping") {
-                const embed = new Discord.RichEmbed()
-                .setTitle("Current latency")
-                .setThumbnail(message.author.avatarURL)
-                .setColor(0xFF6600)
-                .setDescription(`My current latency is ${Math.round(client.ping)}ms.`)
-
-                return message.channel.send({embed});
-        }
-        
-        
-        /**
-         *   Admin EXP Give Command. This command allows an Admin to give experience to a member of a server.
+         *   Administrator's Experience giving command.
          */
         if(command === "adminexp") {
                 if(!message.author.id == '144284575072256000') return message.reply('You need to be a bot admin to use this command.');
@@ -447,7 +477,7 @@ client.on("message", message => {
                         
                 let player = client.getPlayer.get(user.id, message.guild.id);
                 if (!player) {
-                        player = { id: `${message.guild.id}-${user.id}`, user: user.id, guild: message.guild.id, exp: 0, level: 1, coins: 1000, hp: 10, mhand: 0, ohand: 0, armor: 0, accessory: 0 }
+                        player = {  id: `${message.guild.id}-${user.id}`, user: user.id, guild: message.guild.id, level: 1, exp: 0, coins: 1000, health: 10, attack: 1, defense: 1 }
                 }
                 
                 player.exp += expToAdd;
@@ -460,9 +490,8 @@ client.on("message", message => {
                 return message.channel.send(`${user} has recieved ${expToAdd} points and now is level ${player.level}.`)
         }
         
-        
         /**
-         *   Admin coins Give Command. This command allows an Admin to give coins to a member of a server.
+         *   Administrator's Coins give command.
          */
         if(command === "admincoins") {
                 if(!message.author.id == '144284575072256000') return message.reply('You need to be a bot admin to use this command.');
@@ -475,7 +504,7 @@ client.on("message", message => {
                         
                 let player = client.getPlayer.get(user.id, message.guild.id);
                 if (!player) {
-                        player = { id: `${message.guild.id}-${user.id}`, user: user.id, guild: message.guild.id, exp: 0, level: 1, coins: 1000, hp: 10, mhand: 0, ohand: 0, armor: 0, accessory: 0 }
+                        player = { id: `${message.guild.id}-${user.id}`, user: user.id, guild: message.guild.id, level: 1, exp: 0, coins: 1000, health: 10, attack: 1, defense: 1 }
                 }
                 
                 player.coins += coinsToAdd;
