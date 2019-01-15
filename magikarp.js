@@ -248,6 +248,8 @@ client.on("message", message => {
                 
                 const coinsToAdd = parseInt(args[1], 10);
                 if(!coinsToAdd) return message.reply('You forgot the amount of coins to give.');
+                // check if theyre trying to remove points.....
+                if(coinsToAdd < 0) return message.reply('You cannot remove points, pussy.');
                         
                 let player = client.getPlayer.get(user.id, message.guild.id);
                 if (!player) {
