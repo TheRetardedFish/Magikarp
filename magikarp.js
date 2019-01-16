@@ -29,7 +29,8 @@ client.on("ready", () => {
         
         const table = sql.prepare("SELECT count(*) FROM sqlite_master WHERE type='table' AND name = 'players';").get();
 
-        if (!table['count(*)']) {
+        if (!table['count(*)']) 
+        {
                 sql.prepare("CREATE TABLE players (id TEXT PRIMARY KEY, user TEXT, guild TEXT, level INTEGER, exp INTEGER, coins INTEGER, health INTEGER, attack INTEGER, defense INTEGER);").run();
                 sql.prepare("CREATE UNIQUE INDEX idx_players_id ON players (id);").run();
                 sql.pragma("synchronous = 1");
@@ -43,16 +44,29 @@ client.on("ready", () => {
 
 
 /**
+ *   ErrorHandler.
+ *   
+ *   This function will print out any errors to the console if the bot crashes. This
+ *   was needed due to a random error killing the bot overnight as I slept. Plus, 
+ *   after Googling, there is no clear answers based on the NodeJS error which is 
+ *   displayed. So, I guess it's time for a proper error handler.
+ */
+client.on('error', console.error);
+
+
+/**
  *   This function adds to the total people being splashed by Magikarp when the
  *   bot is invited to a new server. In the console, it will also give a small
  *   amount of information related to the server joined.
  */
-client.on("guildCreate", guild => {
+client.on("guildCreate", guild => 
+{
         
         console.log(`New guild joined: ${guild.name} (id: ${guild.id}). This guild has ${guild.memberCount} members!`);
         client.user.setActivity(`Splashing ${client.users.size} people!`);
         
 });
+
 
 /**
  *   This function removes the total people in a server being splashed by Magikarp
@@ -60,7 +74,8 @@ client.on("guildCreate", guild => {
  *   bot is removed. It also provides a small amount of information regarding the
  *   server in the console.
  */
-client.on("guildDelete", guild => {
+client.on("guildDelete", guild => 
+{
         
         console.log(`I have been removed from: ${guild.name} (id: ${guild.id})`);
         client.user.setActivity(`Splashing ${client.users.size} people!`);
@@ -76,7 +91,8 @@ client.on("guildDelete", guild => {
  *   
  *   Remember, this is your final warning when it comes to reading below.
  */
-client.on("message", message => {
+client.on("message", message => 
+{
         
         /**
          *   The following line of code will keep bots from causing bot inception from happening. We
@@ -99,10 +115,12 @@ client.on("message", message => {
          */
         let player;
 
-        if (message.guild) {
+        if (message.guild) 
+        {
                 player = client.getPlayer.get(message.author.id, message.guild.id);
 
-                if (!player) {
+                if (!player) 
+                {
                         player = { id: `${message.guild.id}-${message.author.id}`, user: message.author.id, guild: message.guild.id, level: 1, exp: 0, coins: 1000, health: 10, attack: 1, defense: 1 }
                 }
                 
@@ -113,14 +131,12 @@ client.on("message", message => {
                  *   with the leveling system. The default values that works for the support server
                  *   is min of 5 and max of 15.
                  */
-                const curLevel  = Math.floor(0.25 * Math.sqrt(player.exp));
-                var giveHealth  = 1;
-                var giveAttack  = 1;
-                var giveDefense = 1;
+                const curLevel  = Math.floor(0.5 * Math.sqrt(player.exp));
                 var minEXP      = 5;
                 var maxEXP      = 15;
                 
-                function getRandomInt(minEXP, maxEXP) {
+                function getRandomInt(minEXP, maxEXP) 
+                {
                         min = Math.ceil(minEXP);
                         max = Math.floor(maxEXP);
                 }
@@ -130,29 +146,38 @@ client.on("message", message => {
                 /**
                  *   TODO:  Cooldown (maybe?)
                  */
-                if(player.exp += giveEXP) {
+                if(player.exp += giveEXP) 
+                {
                         player.exp++;
                 }
                 
                 
-                if(player.level < curLevel) {
+                if(player.level < curLevel) 
+                {
                         player.level++;
-                }
-                
-                if(player.health =+ giveHealth) {
-                        player.health++
-                }
-                
-                if(player.attack =+ giveAttack) {
-                        player.attack++
-                }
-                
-                if(player.defense =+ giveDefense) {
-                        player.defense++
+                        
+                        while(player.level++) 
+                        {
+                                if(player.health += 1) 
+                                {
+                                        player.health++;
+                                }
+                                
+                                if(player.attack += 1) 
+                                {
+                                        player.attack++;
+                                }
+                                
+                                if(player.defense += 1) 
+                                {
+                                        player.defense++;
+                                }
+                        }
                 }
 
                 client.setPlayer.run(player);
         }
+        
         
         /**
          *   Cooldown Function.
@@ -166,7 +191,8 @@ client.on("message", message => {
         const args = message.content.slice(config.prefix.length).trim().split(/ +/g);
         const command = args.shift().toLowerCase();
         
-        if (!cooldowns.has(command.name)) {
+        if (!cooldowns.has(command.name)) 
+        {
 		cooldowns.set(command.name, new Discord.Collection());
 	}
 
@@ -174,10 +200,12 @@ client.on("message", message => {
 	const timestamps = cooldowns.get(command.name);
 	const cooldownAmount = (command.cooldown || 5) * 1000;
 
-	if (timestamps.has(message.author.id)) {
+	if (timestamps.has(message.author.id)) 
+        {
 		const expirationTime = timestamps.get(message.author.id) + cooldownAmount;
 
-		if (now < expirationTime) {
+		if (now < expirationTime) 
+                {
 			const timeLeft = (expirationTime - now) / 1000;
 			return message.reply(`You need to wait ${timeLeft.toFixed(1)} more seconds before using the command.`);
 		}
@@ -186,6 +214,7 @@ client.on("message", message => {
 	timestamps.set(message.author.id, now);
 	setTimeout(() => timestamps.delete(message.author.id), cooldownAmount);
         
+        
         /**
          *   Prefix Function.
          *   
@@ -193,11 +222,14 @@ client.on("message", message => {
          *   which are init by Discord members.
          */
         if (message.content.indexOf(config.prefix) !== 0) return;   
-         
+        
+        
+        
         /**
          *   Help Command. Lists all bot commands for the user.
          */
-        if(command === "help" || command === "support") {
+        if(command === "help" || command === "support") 
+        {
                 const embed = new Discord.RichEmbed()
                 
                 .setTitle('Magikarp Bot\'s Help')
@@ -215,7 +247,8 @@ client.on("message", message => {
         /**
          *   Profile Command. This command allows members to check their profile.
          */
-        if(command === "profile" || command === "me") {
+        if(command === "profile" || command === "me") 
+        {
                 const embed = new Discord.RichEmbed()
 
                 .setTitle(`${message.author.username}'s Profile`)
@@ -231,28 +264,34 @@ client.on("message", message => {
                 return message.channel.send({embed});
         }
         
+        
         /**
          *   Give coins to another member of the server.
          */
-        if(command === "give") {  
+        if(command === "give") 
+        {  
                 let sender;
+                let player;
+                
+                player = = client.getPlayer.get(user.id, message.guild.id);
                 sender = client.getPlayer.get(message.author.id, message.guild.id);
                 
-                if (!sender) {
-                        player = { 
-                                id: `${message.guild.id}-${message.author.id}`, user: message.author.id, guild: message.guild.id, level: 1, exp: 0, coins: 1000, health: 10, attack: 1, defense: 1 }
+                if(!player) 
+                {
+                        player = { id: `${message.guild.id}-${user.id}`, user: user.id, guild: message.guild.id, level: 1, exp: 0, coins: 1000, health: 10, attack: 1, defense: 1 }
+                }
+                
+                if(!sender) 
+                {
+                        player = { id: `${message.guild.id}-${message.author.id}`, user: message.author.id, guild: message.guild.id, level: 1, exp: 0, coins: 1000, health: 10, attack: 1, defense: 1 }
                 }
                 
                 const user = message.mentions.users.first() || client.users.get(args[0]);
-                if(!user) return message.reply('You forgot to mention someone or give the amount of coins.');
+                if(!user) return message.reply('You forgot to mention someone.');
                 
                 const coinsToAdd = parseInt(args[1], 10);
                 if(!coinsToAdd) return message.reply('You forgot the amount of coins to give.');
-                        
-                let player = client.getPlayer.get(user.id, message.guild.id);
-                if (!player) {
-                        player = { id: `${message.guild.id}-${user.id}`, user: message.author.id, guild: message.guild.id, level: 1, exp: 0, coins: 1000, health: 10, attack: 1, defense: 1 }
-                }
+                if(!coinsToAdd < 0 ) return message.reply(`You can't do that.`);
                 
                 sender.coins -= coinsToAdd;
                 player.coins += coinsToAdd;
@@ -263,10 +302,12 @@ client.on("message", message => {
                 return message.channel.send(`${user} has recieved ${coinsToAdd} points and now has ${player.coins}.`)
         }
         
+        
         /**
          *   Richest Command.
          */
-        if(command == "richest") {
+        if(command == "richest") 
+        {
                 const top10 = sql.prepare("SELECT * FROM players WHERE guild = ? ORDER BY coins DESC LIMIT 10;").all(message.guild.id);
         
                 const embed = new Discord.RichEmbed()
@@ -280,10 +321,31 @@ client.on("message", message => {
                 return message.channel.send({embed});
         }
         
+        
+        /**
+         *   Levels Command.
+         */
+        if(command == "levels") 
+        {
+                const top10 = sql.prepare("SELECT * FROM players WHERE guild = ? ORDER BY coins DESC LIMIT 10;").all(message.guild.id);
+        
+                const embed = new Discord.RichEmbed()
+                .setTitle("Strongest Players")
+                .setColor(0xFF6600);
+        
+                for(const data of top10) {
+                        embed.addField(client.users.get(data.user).username, data.level, true);
+                }
+        
+                return message.channel.send({embed});
+        }
+        
+        
 	/**
          *   Mining Command.
          */
-        if(command === "mine") {
+        if(command === "mine") 
+        {
                 let player;
 
                 player = client.getPlayer.get(message.author.id, message.guild.id);
@@ -293,7 +355,8 @@ client.on("message", message => {
                 minEXP   = 5;
                 maxEXP   = 25;
 
-                function getRandomInt(minCoins, maxCoins) {
+                function getRandomInt(minCoins, maxCoins) 
+                {
                         min = Math.ceil(minCoins);
                         max = Math.floor(maxCoins);
                         return Math.floor(Math.random() * (maxCoins - minCoins)) + minCoins;
@@ -301,7 +364,8 @@ client.on("message", message => {
 
                 giveCoins = Math.floor(Math.random() * (maxCoins - minCoins)) + minCoins;
 
-                function getRandomInt(minEXP, maxEXP) {
+                function getRandomInt(minEXP, maxEXP) 
+                {
                         min = Math.ceil(minEXP);
                         max = Math.floor(maxEXP);
                         return Math.floor(Math.random() * (maxEXP - minEXP)) + minEXP;
@@ -309,11 +373,13 @@ client.on("message", message => {
 
                 giveEXP = Math.floor(Math.random() * (maxEXP - minEXP)) + minEXP;
 
-                if(player.coins += giveCoins) {
+                if(player.coins += giveCoins) 
+                {
                         player.coins++;
                 }
 
-                if(player.exp += giveEXP) {
+                if(player.exp += giveEXP) 
+                {
                         player.exp++;
                 }
 
@@ -342,10 +408,12 @@ client.on("message", message => {
                 return message.channel.send({embed});
         }
         
+        
         /**
          *   Fishing Command.
          */
-        if(command === "fish") {
+        if(command === "fish") 
+        {
                 let player;
 
                 player = client.getPlayer.get(message.author.id, message.guild.id);
@@ -355,7 +423,8 @@ client.on("message", message => {
                 minEXP   = 5;
                 maxEXP   = 25;
 
-                function getRandomInt(minCoins, maxCoins) {
+                function getRandomInt(minCoins, maxCoins) 
+                {
                         min = Math.ceil(minCoins);
                         max = Math.floor(maxCoins);
                         return Math.floor(Math.random() * (maxCoins - minCoins)) + minCoins;
@@ -363,7 +432,8 @@ client.on("message", message => {
 
                 giveCoins = Math.floor(Math.random() * (maxCoins - minCoins)) + minCoins;
 
-                function getRandomInt(minEXP, maxEXP) {
+                function getRandomInt(minEXP, maxEXP) 
+                {
                         min = Math.ceil(minEXP);
                         max = Math.floor(maxEXP);
                         return Math.floor(Math.random() * (maxEXP - minEXP)) + minEXP;
@@ -371,11 +441,13 @@ client.on("message", message => {
 
                 giveEXP = Math.floor(Math.random() * (maxEXP - minEXP)) + minEXP;
 
-                if(player.coins += giveCoins) {
+                if(player.coins += giveCoins) 
+                {
                         player.coins++;
                 }
 
-                if(player.exp += giveEXP) {
+                if(player.exp += giveEXP) 
+                {
                         player.exp++;
                 }
 
@@ -403,10 +475,12 @@ client.on("message", message => {
                 return message.channel.send({embed});
         }
         
+        
         /**
          *   Woodcutting Command.
          */
-        if(command === "chop") {
+        if(command === "chop") 
+        {
                 let player;
 
                 player = client.getPlayer.get(message.author.id, message.guild.id);
@@ -416,7 +490,8 @@ client.on("message", message => {
                 minEXP   = 5;
                 maxEXP   = 25;
 
-                function getRandomInt(minCoins, maxCoins) {
+                function getRandomInt(minCoins, maxCoins) 
+                {
                         min = Math.ceil(minCoins);
                         max = Math.floor(maxCoins);
                         return Math.floor(Math.random() * (maxCoins - minCoins)) + minCoins;
@@ -424,7 +499,8 @@ client.on("message", message => {
 
                 giveCoins = Math.floor(Math.random() * (maxCoins - minCoins)) + minCoins;
 
-                function getRandomInt(minEXP, maxEXP) {
+                function getRandomInt(minEXP, maxEXP) 
+                {
                         min = Math.ceil(minEXP);
                         max = Math.floor(maxEXP);
                         return Math.floor(Math.random() * (maxEXP - minEXP)) + minEXP;
@@ -432,11 +508,13 @@ client.on("message", message => {
 
                 giveEXP = Math.floor(Math.random() * (maxEXP - minEXP)) + minEXP;
 
-                if(player.coins += giveCoins) {
+                if(player.coins += giveCoins) 
+                {
                         player.coins++;
                 }
 
-                if(player.exp += giveEXP) {
+                if(player.exp += giveEXP) 
+                {
                         player.exp++;
                 }
 
@@ -463,10 +541,12 @@ client.on("message", message => {
                 return message.channel.send({embed});
         }
         
+        
         /**
          *   Administrator's Experience giving command.
          */
-        if(command === "adminexp") {
+        if(command === "adminexp") 
+        {
                 if(!message.author.id == '144284575072256000') return message.reply('You need to be a bot admin to use this command.');
                 
                 const user = message.mentions.users.first() || client.users.get(args[0]);
@@ -476,7 +556,8 @@ client.on("message", message => {
                 if(!expToAdd) return message.reply('You forgot the amount of experience to give.');
                         
                 let player = client.getPlayer.get(user.id, message.guild.id);
-                if (!player) {
+                if (!player) 
+                {
                         player = {  id: `${message.guild.id}-${user.id}`, user: user.id, guild: message.guild.id, level: 1, exp: 0, coins: 1000, health: 10, attack: 1, defense: 1 }
                 }
                 
@@ -490,10 +571,12 @@ client.on("message", message => {
                 return message.channel.send(`${user} has recieved ${expToAdd} points and now is level ${player.level}.`)
         }
         
+        
         /**
          *   Administrator's Coins give command.
          */
-        if(command === "admincoins") {
+        if(command === "admincoins") 
+        {
                 if(!message.author.id == '144284575072256000') return message.reply('You need to be a bot admin to use this command.');
                 
                 const user = message.mentions.users.first() || client.users.get(args[0]);
@@ -503,7 +586,8 @@ client.on("message", message => {
                 if(!coinsToAdd) return message.reply('You forgot the amount of coins to give.');
                         
                 let player = client.getPlayer.get(user.id, message.guild.id);
-                if (!player) {
+                if (!player) 
+                {
                         player = { id: `${message.guild.id}-${user.id}`, user: user.id, guild: message.guild.id, level: 1, exp: 0, coins: 1000, health: 10, attack: 1, defense: 1 }
                 }
                 
