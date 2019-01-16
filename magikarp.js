@@ -597,6 +597,61 @@ client.on("message", message =>
                 
                 return message.channel.send(`${user} has recieved ${coinsToAdd} points and now has ${player.coins}.`)
         }
+         /**
+         * By Exile
+         * Gambling commands
+         */
+        let msgs = message.content.toLowerCase();
+        if(command === "slots") {
+                message.reply("How many coins would you like to bet?");
+                let gambValue = message.content.first(`${args}`);
+                if(gambValue <= 1){
+                        message.channel.sendMessage(":no_entry: **Amount is to small to gamble you must bet at least 1 coin!**");
+                        return(0);
+                }
+                if(player.coins >= gambValue){
+                        player.coins -= gambValue;
+                        let combos = ["🍒", "💗", "💰", "💎", "🏆"];
+                        let spin1 = Math.floor((Math.random() * combos.length));
+                        let spin2 = Math.floor((Math.random() * combos.length));
+                        let spin3 = Math.floor((Math.random() * combos.length));
+
+                        if(combos[spin1] === combos[spin2] && combos[spin3]) {
+                        /**
+                         * By Exile
+                         * You can edit the payout rate set to times 3 the bet for rn
+                         * ideally i can change this to a randomized value based off the original bet if wanted
+                         */
+                        player.coin += (gambValue * 3);
+                        var winSpin = new Discord.RichEmbed()
+                                .setTitle('The Ocean Front Casino')
+                                .addField(':slot_machine: slots :slot_machine:') 
+                                .addField(combos[spin1] + combos[spin2] + combos[spin3])  
+                                .setFooter('WINNER! 🤑')
+                                .setColor('#3fc218')     
+                                .setThumbnail('https://upload.wikimedia.org/wikipedia/commons/thumb/b/bd/Roulette-wheel.svg/512px-Roulette-wheel.svg.png')
+                        message.channel.sendEmbed(winSpin);
+                        }
+                        else{
+                        var lSpin = new Discord.RichEmbed()
+                                .setTitle('The Ocean Front Casino')
+                                .addField(':slot_machine: slots :slot_machine:') 
+                                .addField(combos[spin1] + combos[spin2] + combos[spin3])  
+                                .setFooter('Loser 😭')
+                                .setColor('#3fc218')     
+                                .setThumbnail('https://upload.wikimedia.org/wikipedia/commons/thumb/b/bd/Roulette-wheel.svg/512px-Roulette-wheel.svg.png')
+                        message.channel.sendEmbed(lSpin);
+                        }
+
+                }
+                else{
+                        message.channel.sendMessage(":no_entry: **Insufficent permissions or you do not have enough to gamble** :no_entry:");
+                }
+
+                
+                
+        }
+
 });
 
 client.login(config.token);
