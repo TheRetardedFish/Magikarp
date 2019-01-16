@@ -273,7 +273,9 @@ client.on("message", message =>
                 let sender;
                 let player;
                 
-                player = = client.getPlayer.get(user.id, message.guild.id);
+                const user = message.mentions.users.first() || client.users.get(args[0]);
+                
+                player = client.getPlayer.get(user.id, message.guild.id);
                 sender = client.getPlayer.get(message.author.id, message.guild.id);
                 
                 if(!player) 
@@ -286,10 +288,8 @@ client.on("message", message =>
                         player = { id: `${message.guild.id}-${message.author.id}`, user: message.author.id, guild: message.guild.id, level: 1, exp: 0, coins: 1000, health: 10, attack: 1, defense: 1 }
                 }
                 
-                const user = message.mentions.users.first() || client.users.get(args[0]);
-                if(!user) return message.reply('You forgot to mention someone.');
-                
                 const coinsToAdd = parseInt(args[1], 10);
+                if(!user) return message.reply('You forgot to mention someone.');
                 if(!coinsToAdd) return message.reply('You forgot the amount of coins to give.');
                 if(!coinsToAdd < 0 ) return message.reply(`You can't do that.`);
                 
@@ -299,7 +299,7 @@ client.on("message", message =>
                 client.setPlayer.run(sender);
                 client.setPlayer.run(player);
                 
-                return message.channel.send(`${user} has recieved ${coinsToAdd} points and now has ${player.coins}.`)
+                return message.channel.send(`${user} has recieved ${coinsToAdd} coins and now has ${player.coins}.`)
         }
         
         
