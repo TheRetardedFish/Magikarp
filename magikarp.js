@@ -651,7 +651,21 @@ client.on("message", message =>
                 
                 
         }
-
+         
+        /**
+         * By Exile
+         * ping command
+         */
+        if(command === "ping"){
+                let thumbnailURL = 'https://i.kym-cdn.com/entries/icons/square/000/002/819/magikarp.png';
+                let pingEmbed = new Discord.RichEmbed()
+                        .setTitle('Magikarp Bot')
+                        .setDescription(`:ping_pong: Pong! \n **\`${client.pings[0]}ms\`**`)
+                        .setTimestamp()
+                        .setThumbnail(thumbnailURL)
+                        .setColor('#3fc218')
+                message.channel.sendEmbed(pingEmbed);
+        }
 });
 
 client.login(config.token);
