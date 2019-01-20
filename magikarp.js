@@ -152,25 +152,10 @@ client.on("message", message =>
                 }
                 
                 
-                if(player.level < curLevel)
+                if(player.level < curLevel) 
                 {
-                while(player.level++){         
-                        
-                player.health += 1;
-                                
-                player.health++;
-                                
-                player.attack += 1;
-                player.attack++;
-                                
-                                
-                player.defense += 1;
-                                
-                player.defense++;
-                                
-                }   
-        }
-
+                        player.level++;
+                }
 
                 client.setPlayer.run(player);
         }
@@ -195,7 +180,7 @@ client.on("message", message =>
 
 	const now = Date.now();
 	const timestamps = cooldowns.get(command.name);
-	const cooldownAmount = (command.cooldown || 5) * 1000;
+	const cooldownAmount = (command.cooldown || 1) * 1000;
 
 	if (timestamps.has(message.author.id)) 
         {
@@ -240,6 +225,16 @@ client.on("message", message =>
                 
                 return message.channel.send({embed});
         }
+        
+        
+        /**
+         *   Ping Command.
+         */
+        if(command === "ping")
+        {
+                return message.channel.send(`My current latency is ${client.pings[0]}ms to the server.`);
+        }
+        
         
         /**
          *   Profile Command. This command allows members to check their profile.
@@ -299,6 +294,63 @@ client.on("message", message =>
                 return message.channel.send(`${user} has recieved ${coinsToAdd} coins and now has ${player.coins}.`)
         }
         
+        
+        /**
+         *   Slots command.
+         */
+        if(command === "slots")
+        {
+                let player;
+                
+                if (!player) 
+                {
+                        player = { id: `${message.guild.id}-${message.author.id}`, user: message.author.id, guild: message.guild.id, level: 1, exp: 0, coins: 1000, health: 10, attack: 1, defense: 1 }
+                }
+                
+                let gambling = client.users.get(parseInt(args[0], 10));
+                if(gambling <= 1)
+                {
+                        message.channel.send(`You need you bet at least one coin.`);
+                        return;
+                }
+                
+                if(player.coins >= gambling)
+                {
+                        player.coins -= gambling;
+                        let combos = ["ðŸ’", "ðŸ’—", "ðŸ’°", "ðŸ’Ž", "ðŸ†"];
+                        
+                        let spin1 = Math.floor((Math.random() * combos.length));
+                        let spin2 = Math.floor((Math.random() * combos.length));
+                        let spin3 = Math.floor((Math.random() * combos.length));
+                        
+                        if(combos[spin1] === combos[spin2] && combos[spin3])
+                        {
+                                player.coins += (gambling * 3);
+                                
+                                var win = new Discord.RichEmbed()
+                                
+                                .setTitle('You have won!')
+                                .setColor('0xFF6600')
+                                .addField(combos[spin1] + combos[spin2] + combos[spin3])
+                                
+                                message.channel.send({win})
+                        }
+                        else
+                        {
+                                var lose = new Discord.RichEmbed()
+                                
+                                .setTitle('You have lost!')
+                                .setColor('0xFF6600')
+                                .addField(combos[spin1] + combos[spin2] + combos[spin3])
+                                
+                                message.channel.send({lose})
+                        }
+                }
+                else
+                {
+                        messasge.channel.send("You don\n't have enough money to spin the slots.");
+                }
+        }
         
         /**
          *   Richest Command.
@@ -593,75 +645,6 @@ client.on("message", message =>
                 client.setPlayer.run(player);
                 
                 return message.channel.send(`${user} has recieved ${coinsToAdd} points and now has ${player.coins}.`)
-        }
-         /**
-         * By Exile
-         * Gambling commands
-         */
-        let msgs = message.content.toLowerCase();
-        if(command === "slots") {
-                message.reply("How many coins would you like to bet?");
-                let gambValue = message.content.first(`${args}`);
-                if(gambValue <= 1){
-                        message.channel.sendMessage(":no_entry: **Amount is to small to gamble you must bet at least 1 coin!**");
-                        return(0);
-                }
-                if(player.coins >= gambValue){
-                        player.coins -= gambValue;
-                        let combos = ["🍒", "💗", "💰", "💎", "🏆"];
-                        let spin1 = Math.floor((Math.random() * combos.length));
-                        let spin2 = Math.floor((Math.random() * combos.length));
-                        let spin3 = Math.floor((Math.random() * combos.length));
-
-                        if(combos[spin1] === combos[spin2] && combos[spin3]) {
-                        /**
-                         * By Exile
-                         * You can edit the payout rate set to times 3 the bet for rn
-                         * ideally i can change this to a randomized value based off the original bet if wanted
-                         */
-                        player.coin += (gambValue * 3);
-                        var winSpin = new Discord.RichEmbed()
-                                .setTitle('The Ocean Front Casino')
-                                .addField(':slot_machine: slots :slot_machine:') 
-                                .addField(combos[spin1] + combos[spin2] + combos[spin3])  
-                                .setFooter('WINNER! 🤑')
-                                .setColor('#3fc218')     
-                                .setThumbnail('https://upload.wikimedia.org/wikipedia/commons/thumb/b/bd/Roulette-wheel.svg/512px-Roulette-wheel.svg.png')
-                        message.channel.sendEmbed(winSpin);
-                        }
-                        else{
-                        var lSpin = new Discord.RichEmbed()
-                                .setTitle('The Ocean Front Casino')
-                                .addField(':slot_machine: slots :slot_machine:') 
-                                .addField(combos[spin1] + combos[spin2] + combos[spin3])  
-                                .setFooter('Loser 😭')
-                                .setColor('#3fc218')     
-                                .setThumbnail('https://upload.wikimedia.org/wikipedia/commons/thumb/b/bd/Roulette-wheel.svg/512px-Roulette-wheel.svg.png')
-                        message.channel.sendEmbed(lSpin);
-                        }
-
-                }
-                else{
-                        message.channel.sendMessage(":no_entry: **Insufficent permissions or you do not have enough to gamble** :no_entry:");
-                }
-
-                
-                
-        }
-         
-        /**
-         * By Exile
-         * ping command
-         */
-        if(command === "ping"){
-                let thumbnailURL = 'https://i.kym-cdn.com/entries/icons/square/000/002/819/magikarp.png';
-                let pingEmbed = new Discord.RichEmbed()
-                        .setTitle('Magikarp Bot')
-                        .setDescription(`:ping_pong: Pong! \n **\`${client.pings[0]}ms\`**`)
-                        .setTimestamp()
-                        .setThumbnail(thumbnailURL)
-                        .setColor('#3fc218')
-                message.channel.sendEmbed(pingEmbed);
         }
 });
 
