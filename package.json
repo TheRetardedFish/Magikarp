@@ -1,5 +1,5 @@
 {
-  "name": "saberbot",
+  "name": "magikarp",
   "version": "1.0.0",
   "description": "Discord RPG bot coded in NodeJS using SQLite3.",
   "main": "saber.js",
@@ -16,6 +16,8 @@
   "license": "MIT",
   "dependencies": {
     "better-sqlite3": "^5.2.1",
-    "discord.js": "^11.4.2"
-  }
+    "discord.js": "^11.4.2",
+    "node-gyp": "^3.8.0"
+  },
+  "devDependencies": {}
 }
