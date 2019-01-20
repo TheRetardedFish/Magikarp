@@ -152,28 +152,25 @@ client.on("message", message =>
                 }
                 
                 
-                if(player.level < curLevel) 
+                if(player.level < curLevel)
                 {
-                        player.level++;
+                while(player.level++){         
                         
-                        while(player.level++) 
-                        {
-                                if(player.health += 1) 
-                                {
-                                        player.health++;
-                                }
+                player.health += 1;
                                 
-                                if(player.attack += 1) 
-                                {
-                                        player.attack++;
-                                }
+                player.health++;
                                 
-                                if(player.defense += 1) 
-                                {
-                                        player.defense++;
-                                }
-                        }
-                }
+                player.attack += 1;
+                player.attack++;
+                                
+                                
+                player.defense += 1;
+                                
+                player.defense++;
+                                
+                }   
+        }
+
 
                 client.setPlayer.run(player);
         }
